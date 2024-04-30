@@ -41,6 +41,7 @@ Shader "Hidden/RayMarchingShader"
             sampler2D _CameraDepthTexture;
 
             uniform float4x4 ivp;
+            uniform float time;
 
             #define STEPS 100
             #define EPSILON 0.01
@@ -112,8 +113,49 @@ Shader "Hidden/RayMarchingShader"
                 return d;
             }
 
+            // kelp stuff
+
+            float RoundedBox(float3 eye, float3 scale, float smooth)
+            {
+                float3 q = abs(eye) - scale + smooth;
+                return length(max(q, 0.0f)) + min(max(q.x, max(q.y, q.z)), 0.0f) - smooth;
+            }
+
+            float Twist(float3 eye, float rot)
+            {
+                float c = cos(rot * eye.y);
+                float s = sin(rot * eye.y);
+                float2x2 mat = float2x2(c, -s, s, c);
+                float3 q = float3(mul(mat, eye.xz), eye.y);
+
+                return RoundedBox(q, float3(0.2, 0.01, 10), 0.01);
+            }
+
+            float KelpStrand(float3 eye)
+            {
+                return Twist(eye, 1.4);
+            }
+
+            float waveKelpStrand(float3 eye, float rot, float frequency, float amplitude, float time)
+            {
+                // Apply twist to the input position along the y-axis
+                float c = cos(rot * eye.y);
+                float s = sin(rot * eye.y);
+                float2x2 mat = float2x2(c, -s, s, c);
+                float3 q = float3(mul(mat, eye.xz), eye.y);
+
+                // Add sinusoidal wave motion to create the kelp strand effect, animating over time
+                float wave = sin((eye.y + time) * frequency) * amplitude;
+                float3 p = q + float3(0, wave, 0);
+
+                // Evaluate the rounded box SDF function
+                return RoundedBox(p, float3(0.2, 0.01, 10), 0.01);
+            }
+
             float Map(float3 eye)
             {
+                return waveKelpStrand(eye, 1, 1, 0.1, time);
+
                 /*
                 float f = 2.0;
                 for (int i = 0; i < sphereAmount; i++)
@@ -126,7 +168,7 @@ Shader "Hidden/RayMarchingShader"
                 return f;
                 */
                 
-                return Mandelbulb(eye, float3(0, 0, 0), float3(0, 0, 0), 1);
+                //return Mandelbulb(eye, float3(0, 0, 0), float3(0, 0, 0), 1);
             }
 
             float3 calcNormal(in float3 p)
@@ -180,7 +222,7 @@ Shader "Hidden/RayMarchingShader"
                     if (stepDist < EPSILON)
                     {
                         float3 lightpos = normalize(float3(1, 0.6, -1) * 10000);
-                        float3 albedo = float3(0.2, 0.2, 1);
+                        float3 albedo = float3(0.2, 0.4, 0.2);
                         float3 normal = calcNormal(rayPos);
                         float diffuse = max(0.0, dot(lightpos, normal));
                         float3 specular = pow(clamp(dot(lightpos, normal), 0.0, 1.0), 64.0) * float3(0.3, 0.3, 0.3);
