@@ -43,8 +43,8 @@ Shader "Hidden/RayMarchingShader"
             uniform float4x4 ivp;
             uniform float time;
 
-            #define STEPS 100
-            #define EPSILON 0.01
+            #define STEPS 200
+            #define EPSILON 0.006
 
             float3x3 RadiansToMatrix(float3 rad)
             {
@@ -139,11 +139,18 @@ Shader "Hidden/RayMarchingShader"
 
             float Random(float seed)
             {
-                return frac(sin(seed) * 43758.5453);
+                return abs(frac(sin(seed) * 43758.5453));
+            }
+
+            float RandomSigned(float random)
+            {
+                return (Random(random + 3454.23452) - 0.5) * 2;
             }
             
-            float WavingKelpStrand(float3 eye, float rot, float frequency, float amplitude)
+            float WavingKelpStrand(float3 eye, float rot, float frequency, float amplitude, float3 id)
             {
+                eye += float3(RandomSigned(id.z + 908.984), 0, RandomSigned(id.x + 345.3456));
+
                 // Apply twist to the input position along the y-axis
                 float c = cos(rot * eye.y);
                 float s = sin(rot * eye.y);
@@ -159,7 +166,7 @@ Shader "Hidden/RayMarchingShader"
                 return Box(p, float3(0, 0, 0), boxscale);
             }
 
-            float RepeatingKelp(float3 eye, float3 size, float separation)
+            float RepeatingKelp(float3 eye, float3 size, float separation, float rotation)
             {
                 float3 id = round(eye / separation);
                 float3 o = sign(eye - separation * id);
@@ -173,7 +180,7 @@ Shader "Hidden/RayMarchingShader"
                             float3 rid = id + float3(i, j, k) * o;
                             rid = clamp(rid, -(size - 1.0) * 0.5, (size - 1.0) * 0.5);
                             float3 r = eye - separation * rid;
-                            float sdf = WavingKelpStrand(r, 2, 1, 0.1);
+                            float sdf = WavingKelpStrand(r, rotation, 1, 0.1, rid);
                             d = min(d, sdf);
                         }
                     }
@@ -183,17 +190,9 @@ Shader "Hidden/RayMarchingShader"
             
             float Map(float3 eye)
             {
-                /*
-                float seperation = 2;
-                float3 repetition = float3(10, 0, 10);
-                float3 id = round(eye / seperation);
-                float3 repeye = eye - seperation * clamp(id, -repetition, repetition);
-                return WavingKelpStrand(repeye, 1, 1, 0.1, id);
-                */
-
-                float seperation = 2;
-                float3 repetition = float3(10, 0, 10);
-                return RepeatingKelp(eye, repetition, seperation);
+                float seperation = 4;
+                float3 repetition = float3(5, 0, 5);
+                return RepeatingKelp(eye, repetition, seperation, 0.4);
             }
 
             float3 calcNormal(in float3 p)
