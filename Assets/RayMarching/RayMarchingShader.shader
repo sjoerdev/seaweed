@@ -136,6 +136,11 @@ Shader "Hidden/RayMarchingShader"
                 d = max(d,z);
                 return d;
             }
+
+            float Random(float seed)
+            {
+                return frac(sin(seed) * 43758.5453);
+            }
             
             float WavingKelpStrand(float3 eye, float rot, float frequency, float amplitude)
             {
@@ -154,12 +159,41 @@ Shader "Hidden/RayMarchingShader"
                 return Box(p, float3(0, 0, 0), boxscale);
             }
 
+            float RepeatingKelp(float3 eye, float3 size, float separation)
+            {
+                float3 id = round(eye / separation);
+                float3 o = sign(eye - separation * id);
+                float d = 1e20;
+                for (int k = 0; k < 2; k++)
+                {
+                    for (int j = 0; j < 2; j++)
+                    {
+                        for (int i = 0; i < 2; i++)
+                        {
+                            float3 rid = id + float3(i, j, k) * o;
+                            rid = clamp(rid, -(size - 1.0) * 0.5, (size - 1.0) * 0.5);
+                            float3 r = eye - separation * rid;
+                            float sdf = WavingKelpStrand(r, 2, 1, 0.1);
+                            d = min(d, sdf);
+                        }
+                    }
+                } 
+                return d;
+            }
+            
             float Map(float3 eye)
             {
+                /*
                 float seperation = 2;
-                float3 repetition = float3(1, 0, 1);
-                float3 repeye = eye - seperation * clamp(round(eye / seperation), -repetition, repetition);
-                return WavingKelpStrand(repeye, 0.4, 1, 0.1);
+                float3 repetition = float3(10, 0, 10);
+                float3 id = round(eye / seperation);
+                float3 repeye = eye - seperation * clamp(id, -repetition, repetition);
+                return WavingKelpStrand(repeye, 1, 1, 0.1, id);
+                */
+
+                float seperation = 2;
+                float3 repetition = float3(10, 0, 10);
+                return RepeatingKelp(eye, repetition, seperation);
             }
 
             float3 calcNormal(in float3 p)
