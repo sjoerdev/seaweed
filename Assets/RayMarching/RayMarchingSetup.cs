@@ -3,6 +3,13 @@ using UnityEngine;
 [ExecuteInEditMode]
 public class RayMarchingSetup : MonoBehaviour
 {
+    [Header("Zeewier:")]
+    public Vector2 repetition = new Vector2(5, 5);
+    [Range(2, 16)] public float seperation = 4;
+    [Range(0, 0.5f)] public float twisting = 0.2f;
+    [Range(8, 1024)] public int seed = 98;
+
+    [Header("Other:")]
     public Material material;
 
     private void Start()
@@ -13,8 +20,15 @@ public class RayMarchingSetup : MonoBehaviour
     private void OnRenderImage(RenderTexture source, RenderTexture destination)
     {
         Matrix4x4 viewProjectionMatrix = Camera.main.projectionMatrix * Camera.main.worldToCameraMatrix;
+
         material.SetMatrix("ivp", viewProjectionMatrix.inverse);
         material.SetFloat("time", Time.time);
+
+        material.SetVector("repetition", repetition);
+        material.SetFloat("seperation", seperation);
+        material.SetFloat("twisting", twisting);
+        material.SetInt("kelpseed", seed);
+
         Graphics.Blit(source, destination, material);
     }
 }

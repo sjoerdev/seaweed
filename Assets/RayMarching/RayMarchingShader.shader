@@ -43,6 +43,11 @@ Shader "Hidden/RayMarchingShader"
             uniform float4x4 ivp;
             uniform float time;
 
+            uniform float2 repetition;
+            uniform float seperation;
+            uniform float twisting;
+            uniform int kelpseed;
+
             #define STEPS 200
             #define EPSILON 0.006
 
@@ -144,7 +149,7 @@ Shader "Hidden/RayMarchingShader"
 
             float RandomSigned(float random)
             {
-                return (Random(random + 3454.23452) - 0.5) * 2;
+                return (Random(random + 3454.23452 + kelpseed) - 0.5) * 2;
             }
             
             float WavingKelpStrand(float3 eye, float rot, float frequency, float amplitude, float3 id)
@@ -184,15 +189,13 @@ Shader "Hidden/RayMarchingShader"
                             d = min(d, sdf);
                         }
                     }
-                } 
+                }
                 return d;
             }
             
             float Map(float3 eye)
             {
-                float seperation = 4;
-                float3 repetition = float3(5, 0, 5);
-                return RepeatingKelp(eye, repetition, seperation, 0.4);
+                return RepeatingKelp(eye, float3(repetition.x, 0, repetition.y), seperation, twisting);
             }
 
             float3 calcNormal(in float3 p)
