@@ -248,12 +248,16 @@ Shader "Hidden/RayMarchingShader"
                     // hit object
                     if (stepDist < EPSILON)
                     {
-                        float3 lightpos = normalize(float3(1, 0.6, -1) * 10000);
+                        float3 lightpos = normalize(_WorldSpaceLightPos0.xyz * 10000);
                         float3 albedo = float3(0.2, 0.4, 0.2);
                         float3 normal = calcNormal(rayPos);
                         float diffuse = max(0.0, dot(lightpos, normal));
                         float3 specular = pow(clamp(dot(lightpos, normal), 0.0, 1.0), 64.0) * float3(0.3, 0.3, 0.3);
-                        return float4(albedo * (diffuse + 0.2) + specular, 1.0);
+
+                        float waveoffset = sin(rayPos.y + time);
+                        float3 wavecolor = lerp(albedo, albedo - float3(0.1, 0.1, 0.1), 0.5 + 0.5 * waveoffset);
+
+                        return float4(wavecolor * (diffuse + 0.2) + specular, 1.0);
                     }
 
                     // increase ray distance
