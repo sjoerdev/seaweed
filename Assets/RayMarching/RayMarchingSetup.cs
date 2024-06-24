@@ -9,6 +9,10 @@ public class RayMarchingSetup : MonoBehaviour
     [Range(0, 0.5f)] public float twisting = 0.2f;
     [Range(8, 1024)] public int seed = 98;
 
+    [Header("Sub Surface Scattering:")]
+    [Range(0f, 1f)] public float intensity = 0.5f;
+    [Range(0f, 0.4f)] public float radius = 0.1f;
+
     [Header("Other:")]
     public Material material;
 
@@ -28,6 +32,9 @@ public class RayMarchingSetup : MonoBehaviour
         material.SetFloat("seperation", seperation);
         material.SetFloat("twisting", twisting);
         material.SetInt("kelpseed", seed);
+
+        material.SetFloat("sss_intensity", intensity);
+        material.SetFloat("sss_radius", radius);
 
         Graphics.Blit(source, destination, material);
     }

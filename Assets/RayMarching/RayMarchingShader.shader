@@ -48,6 +48,9 @@ Shader "Hidden/RayMarchingShader"
             uniform float twisting;
             uniform int kelpseed;
 
+            uniform float sss_intensity;
+            uniform float sss_radius;
+
             #define STEPS 200
             #define EPSILON 0.006
 
@@ -221,6 +224,27 @@ Shader "Hidden/RayMarchingShader"
                 return length(worldPos.xyz - _WorldSpaceCameraPos);
             }
 
+            float3 SubsurfaceScattering
+            (
+                float3 surfacePos,     // Surface position
+                float3 normal,         // Surface normal at the hit point
+                float3 lightDir,       // Direction from surface to light source
+                float3 lightColor,     // Color of the light source
+                float sssRadius,       // Radius for subsurface scattering
+                float sssIntensity     // Intensity of the subsurface scattering
+            )
+            {
+                // Calculate the scattering point below the surface
+                float3 scatterPoint = surfacePos - normal * sssRadius;
+                
+                // Simulate light scattering by averaging the surface and scatter point light
+                float3 lightAtSurface = max(dot(normal, lightDir), 0.0) * lightColor;
+                float3 lightAtScatterPoint = max(dot(normalize(scatterPoint - surfacePos), lightDir), 0.0) * lightColor;
+                
+                // Blend based on SSS intensity
+                return lerp(lightAtSurface, lightAtScatterPoint, sssIntensity);
+            }
+
             fixed4 frag (inputf input) : SV_Target
             {
                 float4 current = tex2D(_MainTex, input.uv);
@@ -254,10 +278,13 @@ Shader "Hidden/RayMarchingShader"
                         float diffuse = max(0.0, dot(lightpos, normal));
                         float3 specular = pow(clamp(dot(lightpos, normal), 0.0, 1.0), 64.0) * float3(0.3, 0.3, 0.3);
 
+                        float3 tolight = normalize(rayPos - _WorldSpaceLightPos0.xyz);
+                        float3 subsurface = SubsurfaceScattering(rayPos, normal, tolight, float3(1,1,1), sss_intensity, sss_intensity);
+
                         float waveoffset = sin(rayPos.y + time);
                         float3 wavecolor = lerp(albedo, albedo - float3(0.1, 0.1, 0.1), 0.5 + 0.5 * waveoffset);
 
-                        return float4(wavecolor * (diffuse + 0.2) + specular, 1.0);
+                        return float4(wavecolor * (diffuse + 0.2) + specular + subsurface * 0.2f, 1.0);
                     }
 
                     // increase ray distance

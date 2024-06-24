@@ -228,6 +228,8 @@ MonoBehaviour:
   seperation: 4
   twisting: 0.2
   seed: 98
+  intensity: 0.5
+  radius: 0.1
   material: {fileID: 2100000, guid: 66e2ccf2caecf77458f26e01c65ae53b, type: 2}
 --- !u!1 &1969553275
 GameObject:
